@@ -121,6 +121,8 @@ const _conforms: SourceItem = {} as SlackItem;
 export const SlackRun = z.object({
   collector: z.literal("slack"),
   surface: z.enum(["activity", "unreads", "later"]),
+  /** The moment the collector read the feed to produce this run. */
+  collected_at: z.iso.datetime(),
   /** Whoever the collector read the feed as. The card works out what is mine —
    *  which messages, whether I already replied, whose message was reacted to —
    *  by comparing against this, rather than the collector deciding for it. */
