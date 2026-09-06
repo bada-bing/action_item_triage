@@ -1,5 +1,6 @@
 node_modules/
 dist/
+.svelte-check/
 __pycache__/
 *.pyc
 collectors/*/out/
