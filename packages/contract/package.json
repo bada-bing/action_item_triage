@@ -3,5 +3,17 @@
   "private": true,
   "type": "module",
   "version": "0.0.0",
-  "exports": { ".": "./item.ts" }
+  "exports": {
+    "./slack": "./slack.ts",
+    "./source-item": "./source-item.ts"
+  },
+  "dependencies": {
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
 }
