@@ -11,9 +11,11 @@
     "zod": "^4.0.0"
   },
   "devDependencies": {
+    "@types/bun": "^1.4.1",
     "typescript": "^7.0.2"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "validate": "bun run validate.ts"
   }
 }
