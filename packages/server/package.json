@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "version": "0.0.0",
-  "scripts": { "dev": "bun --watch main.ts" },
-  "dependencies": { "@ait/contract": "workspace:*" }
+  "scripts": { "dev": "bun --watch main.ts", "typecheck": "tsc --noEmit" },
+  "dependencies": { "@ait/contract": "workspace:*" },
+  "devDependencies": { "@types/bun": "^1.4.1", "typescript": "^7.0.2" }
 }

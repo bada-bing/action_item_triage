@@ -22,6 +22,10 @@
       "dependencies": {
         "@ait/contract": "workspace:*",
       },
+      "devDependencies": {
+        "@types/bun": "^1.4.1",
+        "typescript": "^7.0.2",
+      },
     },
     "packages/web": {
       "name": "@ait/web",

@@ -6,6 +6,6 @@
     "packages/*"
   ],
   "scripts": {
-    "typecheck": "bun run --cwd packages/contract typecheck"
+    "typecheck": "bun run --filter '*' typecheck"
   }
 }
