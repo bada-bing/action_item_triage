@@ -13,7 +13,8 @@ export const User = z.object({
 });
 export type User = z.infer<typeof User>;
 
-/** Grouped as Slack groups them: skin-tone variants fold into one chip. */
+/** One reaction, as Slack's API returns it: a skin-tone variant counts as a
+ *  reaction of its own. The page groups them back together to draw one chip. */
 export const Reaction = z.object({
   /** A glyph, or a `:shortcode:` where the emoji is custom to the workspace
    *  and has none — the run carries the image URL for those. */

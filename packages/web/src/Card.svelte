@@ -2,6 +2,7 @@
   import type { SlackItem, User } from "@ait/contract/slack";
   import MessageText from "./MessageText.svelte";
   import ReasonBadge from "./ReasonBadge.svelte";
+  import Reactions from "./Reactions.svelte";
   import { formatDate, formatTime } from "./slack-time.ts";
 
   let {
@@ -50,7 +51,12 @@
     </div>
   </header>
 
-  <blockquote><MessageText text={message.text} {me} {emoji} /></blockquote>
+  <blockquote>
+    <MessageText text={message.text} {me} {emoji} />
+    {#if message.reactions.length}
+      <Reactions reactions={message.reactions} {me} {emoji} />
+    {/if}
+  </blockquote>
 </article>
 
 <style>
