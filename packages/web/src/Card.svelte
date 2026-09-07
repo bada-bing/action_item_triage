@@ -1,8 +1,10 @@
 <script lang="ts">
-  import type { SlackItem, User } from "@ait/contract/slack";
+  import type { Me, SlackItem, User } from "@ait/contract/slack";
   import MessageText from "./MessageText.svelte";
   import ReasonBadge from "./ReasonBadge.svelte";
   import Reactions from "./Reactions.svelte";
+  import Transcript from "./Transcript.svelte";
+  import { faceOf } from "./slack-user.ts";
   import { formatDate, formatTime } from "./slack-time.ts";
 
   let {
@@ -12,7 +14,7 @@
     emoji,
   }: {
     item: SlackItem;
-    me: User;
+    me: Me;
     surface: string;
     emoji: Record<string, string>;
   } = $props();
@@ -20,6 +22,7 @@
   const message = $derived(item.content.message);
   const conversation = $derived(item.context.location.conversation);
   // Whoever put this on the board, which for a reaction is not the author.
+  const exchange = $derived(item.context.exchange);
   const face = $derived(item.context.reasons[0]!.actor ?? message.author);
   const attributed = $derived(face.id !== message.author.id);
 
@@ -63,8 +66,8 @@
   <header>
     <span class="stack" style="--depth: {Math.min(faces.length, 3)}">
       {#each faces.slice(0, 3) as person, i (person.id)}
-        {#if person.avatar}
-          <img class="face" src={person.avatar} alt="" style="z-index: {3 - i}" />
+        {#if faceOf(person)}
+          <img class="face" src={faceOf(person)} alt="" style="z-index: {3 - i}" />
         {:else}
           <span class="face initials" style="z-index: {3 - i}"
             >{person.display.slice(0, 1)}</span
@@ -77,6 +80,9 @@
         <a class="where" href={item.meta.ref} target="_blank" rel="noreferrer">
           {#if conversation.kind === "channel"}<span class="hash">#</span>{/if}
           {conversation.name}
+          {#if item.context.location.thread}
+            <span class="sep">›</span><span class="thread">↳ thread</span>
+          {/if}
         </a>
         <span class="when">{formatDate(message.ts)} {formatTime(message.ts)}</span>
       </div>
@@ -91,6 +97,18 @@
       <Reactions reactions={message.reactions} {me} {emoji} />
     {/if}
   </blockquote>
+
+  {#if exchange.history.length > 1 || exchange.in_reply_to}
+    <Transcript
+      history={exchange.history}
+      subjectTs={message.ts}
+      inReplyTo={exchange.in_reply_to}
+      isThread={item.context.location.thread !== null}
+      replyCount={exchange.reply_count}
+      {me}
+      {emoji}
+    />
+  {/if}
 </article>
 
 <style>
@@ -188,6 +206,13 @@
   .hash {
     font-weight: 700;
     opacity: 0.65;
+  }
+  .sep {
+    color: var(--muted);
+    margin: 0 4px;
+  }
+  .thread {
+    color: var(--muted);
   }
   .name {
     padding-left: 10px;
