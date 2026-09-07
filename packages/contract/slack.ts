@@ -124,6 +124,11 @@ export const SlackRun = z.object({
   surface: z.enum(["activity", "unreads", "later"]),
   /** The moment the collector read the feed to produce this run. */
   collected_at: z.iso.datetime(),
+  /** The user groups I belong to. Slack keeps membership on the group rather
+   *  than on the user, and exposes it nowhere a collector can read, so this is
+   *  configuration: without it a card cannot tell a group mention that reaches
+   *  me from one naming a group I am not in. */
+  my_user_groups: z.array(z.string()).default([]),
   /** Whoever the collector read the feed as. The card works out what is mine —
    *  which messages, whether I already replied, whose message was reacted to —
    *  by comparing against this, rather than the collector deciding for it. */
