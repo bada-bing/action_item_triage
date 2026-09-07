@@ -28,6 +28,10 @@
   /* a mention, but of everybody: its own hue, and never filled */
   --broadcast: #4a6b9a;
 
+  /* work left in Slack itself: notifications only I can clear */
+  --warn: #9a6212;
+  --warn-soft: #fbeed6;
+
   --sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, monospace;
 }
@@ -49,6 +53,9 @@
     --group: #b3a2f5;
     --group-soft: #2b2447;
     --broadcast: #8fabd4;
+
+    --warn: #e0a94f;
+    --warn-soft: #3a2c17;
   }
 }
 

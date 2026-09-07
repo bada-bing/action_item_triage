@@ -19,39 +19,73 @@
 
   const message = $derived(item.content.message);
   const conversation = $derived(item.context.location.conversation);
-  const mine = $derived(message.author.id === me.id);
-  // What Miki must clear by hand in Slack: one per Activity row that folded in.
+  // Whoever put this on the board, which for a reaction is not the author.
+  const face = $derived(item.context.reasons[0]!.actor ?? message.author);
+  const attributed = $derived(face.id !== message.author.id);
+
+  // A reaction is rarely one person, and the row names only the first.
+  const faces = $derived.by(() => {
+    if (item.context.reasons[0]!.reason !== "reaction") return [face];
+    const seen = new Map<string, User>([[face.id, face]]);
+    for (const reaction of message.reactions) {
+      for (const user of reaction.users) if (!seen.has(user.id)) seen.set(user.id, user);
+    }
+    return [...seen.values()];
+  });
+
+  const NAMED = 5;
+
+  const facesLabel = $derived.by(() => {
+    const names = faces.slice(0, NAMED).map(nameOf);
+    const rest = faces.length - names.length;
+    const listed =
+      names.length === 1
+        ? names[0]!
+        : `${names.slice(0, -1).join(", ")} & ${names.at(-1)}`;
+    return rest > 0 ? `${listed} & ${rest} more` : listed;
+  });
   const rows = $derived(item.context.reasons.length);
+
+  function nameOf(user: User): string {
+    return user.id === me.id ? "You" : user.display;
+  }
 </script>
 
 <article>
   <div class="why">
     {#each item.context.reasons as reason (reason.raw)}
-      <ReasonBadge {reason} author={message.author} {me} />
+      <ReasonBadge {reason} {face} {me} />
     {/each}
-    <span class="rows">{rows} Slack {rows === 1 ? "row" : "rows"}</span>
+    {#if rows > 1}<span class="rows">{rows} Slack rows</span>{/if}
     <span class="surface">{surface}</span>
   </div>
 
   <header>
-    {#if message.author.avatar}
-      <img class="face" src={message.author.avatar} alt="" />
-    {:else}
-      <span class="face initials">{message.author.display.slice(0, 1)}</span>
-    {/if}
+    <span class="stack" style="--depth: {Math.min(faces.length, 3)}">
+      {#each faces.slice(0, 3) as person, i (person.id)}
+        {#if person.avatar}
+          <img class="face" src={person.avatar} alt="" style="z-index: {3 - i}" />
+        {:else}
+          <span class="face initials" style="z-index: {3 - i}"
+            >{person.display.slice(0, 1)}</span
+          >
+        {/if}
+      {/each}
+    </span>
     <div class="who">
-      <a class="where" href={item.meta.ref} target="_blank" rel="noreferrer">
-        {#if conversation.kind === "channel"}<span class="hash">#</span>{/if}
-        {conversation.name}
-      </a>
-      <span class="name">
-        {mine ? "You" : message.author.display}
+      <div class="line">
+        <a class="where" href={item.meta.ref} target="_blank" rel="noreferrer">
+          {#if conversation.kind === "channel"}<span class="hash">#</span>{/if}
+          {conversation.name}
+        </a>
         <span class="when">{formatDate(message.ts)} {formatTime(message.ts)}</span>
-      </span>
+      </div>
+      <span class="name">{facesLabel}</span>
     </div>
   </header>
 
   <blockquote>
+    {#if attributed}<span class="attrib">{nameOf(message.author)}:</span>{/if}
     <MessageText text={message.text} {me} {emoji} />
     {#if message.reactions.length}
       <Reactions reactions={message.reactions} {me} {emoji} />
@@ -81,23 +115,42 @@
     color: var(--muted);
   }
   .rows {
-    background: var(--btn-bg);
+    background: var(--warn-soft);
+    color: var(--warn);
     border-radius: 999px;
     padding: 1.5px 8px;
+    font-weight: 500;
   }
+
   .surface {
     margin-left: auto;
   }
   header {
     display: flex;
+    align-items: flex-start;
     gap: 0.6rem;
     margin-bottom: 0.7rem;
   }
-  .face {
-    width: 34px;
-    height: 34px;
-    border-radius: 6px;
+  /* Fixed at three faces whether or not there are three, so the channel and
+     the name start at the same place on every card. */
+  .stack {
+    display: flex;
+    justify-content: center;
     flex: none;
+    width: 66px;
+  }
+  .stack .face + .face {
+    margin-left: -30px;
+  }
+  .face {
+    position: relative;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    flex: none;
+    object-fit: cover;
+    border: 2px solid var(--surface);
+    box-sizing: border-box;
   }
   .initials {
     display: grid;
@@ -107,10 +160,16 @@
     font-size: 0.9rem;
   }
   .who {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
     min-width: 0;
+  }
+  .line {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
   .where {
     font-family: var(--mono);
@@ -118,7 +177,7 @@
     color: var(--ink);
     background: var(--btn-bg);
     border-radius: 5px;
-    padding: 2px 7px;
+    padding: 4px 10px;
     text-decoration: none;
     align-self: flex-start;
   }
@@ -131,11 +190,20 @@
     opacity: 0.65;
   }
   .name {
+    padding-left: 10px;
     font-size: 13px;
     color: var(--muted);
   }
   .when {
-    margin-left: 0.4rem;
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .attrib {
+    font-weight: 600;
+    color: var(--muted);
+    margin-right: 0.3rem;
   }
   blockquote {
     margin: 0;

@@ -4,18 +4,16 @@
 
   let {
     reason,
-    author,
+    face,
     me,
-  }: { reason: Reason; author: User; me: User } = $props();
+  }: { reason: Reason; face: User; me: User } = $props();
 
   const chip = $derived(chipOf(reason.reason));
 
-  // Usually the actor wrote the message and the header already names them. A
-  // reaction or an invitation is the case where they differ, and there the
-  // actor is the only place the other person appears. Never me: a reminder is
-  // one I set, so naming myself as its actor says nothing.
+  // The card shows the leading reason's face already; a second reason with a
+  // different actor is the only place that person appears.
   const actor = $derived(
-    reason.actor && reason.actor.id !== author.id && reason.actor.id !== me.id
+    reason.actor && reason.actor.id !== face.id && reason.actor.id !== me.id
       ? reason.actor.display
       : null,
   );
@@ -52,8 +50,7 @@
     color: var(--group);
     background: var(--group-soft);
   }
-  /* Somebody typed @channel on purpose, so it is a mention and takes a hue —
-     but it named everybody rather than me, so it is never filled. */
+  /* A mention, so it takes a hue; not of me, so it is never filled. */
   .broadcast {
     border-color: var(--broadcast);
     color: var(--broadcast);
