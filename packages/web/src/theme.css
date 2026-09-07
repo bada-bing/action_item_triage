@@ -1,0 +1,60 @@
+/* The palette, in one place. Components name roles, never colours.
+ *
+ * The hue scale is the load-bearing part: teal, magenta and violet are not
+ * decoration but a reading of how firmly something is addressed to me — by
+ * name, privately, or as one of a group. Neutrals carry everything that is
+ * not a mention. Change a value here and every chip that means the same
+ * thing changes with it. */
+
+:root {
+  /* surfaces and text */
+  --ground: #f2f5f4;
+  --surface: #ffffff;
+  --ink: #1d2725;
+  --muted: #5f6f6a;
+  --line: #d9e0de;
+  --btn-bg: #eef2f1;
+  --subject: #e9eef7;
+
+  /* addressed to me by name */
+  --accent: #0f766e;
+  --accent-soft: #e4f0ee;
+  /* addressed to me privately */
+  --dm: #b02a7a;
+  --dm-soft: #fbe6f2;
+  /* addressed to a group I am in */
+  --group: #6d4bd0;
+  --group-soft: #ece7fb;
+  /* a mention, but of everybody: its own hue, and never filled */
+  --broadcast: #4a6b9a;
+
+  --sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #101514;
+    --surface: #181e1c;
+    --ink: #e3e9e6;
+    --muted: #8da09a;
+    --line: #2a332f;
+    --btn-bg: #212927;
+    --subject: #1b2634;
+
+    --accent: #3cb8a8;
+    --accent-soft: #16302c;
+    --dm: #ee9ac9;
+    --dm-soft: #3a1d2f;
+    --group: #b3a2f5;
+    --group-soft: #2b2447;
+    --broadcast: #8fabd4;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 15px/1.5 var(--sans);
+}

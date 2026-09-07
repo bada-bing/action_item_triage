@@ -5,9 +5,12 @@
 // shortcodes into glyphs, so a `:shortcode:` still here is a workspace emoji
 // with an image in the run, or not an emoji at all.
 
+/** Who a mention reaches, which decides how loudly it is drawn. */
+export type MentionTarget = "user" | "channel" | "group" | "broadcast";
+
 export type Token =
   | { kind: "text"; text: string }
-  | { kind: "mention"; label: string }
+  | { kind: "mention"; label: string; target: MentionTarget; userId?: string }
   | { kind: "link"; href: string; label: string }
   | { kind: "emoji"; name: string };
 
@@ -24,13 +27,15 @@ const MARKUP = new RegExp(
   "g",
 );
 
-/** Returns the text a mention shows, whichever of the four kinds it is.
- *  `{user: "U04", userLabel: "wolle"}` -> `"@wolle"` */
-function mentionLabel(g: Record<string, string | undefined>): string | null {
-  if (g.user) return "@" + (g.userLabel || g.user);
-  if (g.channel) return "#" + (g.channelLabel || g.channel);
-  if (g.group) return g.groupLabel || "@" + g.group;
-  if (g.broadcast) return "@" + g.broadcast;
+/** Returns what a mention shows and who it reaches.
+ *  `{user: "U04", userLabel: "ada"}` -> `{label: "@ada", target: "user"}` */
+function mentionLabel(
+  g: Record<string, string | undefined>,
+): { label: string; target: MentionTarget } | null {
+  if (g.user) return { label: "@" + (g.userLabel || g.user), target: "user" };
+  if (g.channel) return { label: "#" + (g.channelLabel || g.channel), target: "channel" };
+  if (g.group) return { label: g.groupLabel || "@" + g.group, target: "group" };
+  if (g.broadcast) return { label: "@" + g.broadcast, target: "broadcast" };
   return null;
 }
 
@@ -46,7 +51,14 @@ function unescape(s: string): string {
  *  `{href: "https://x", hrefLabel: "x"}` -> `{kind: "link", href, label}` */
 function tokenOf(g: Record<string, string | undefined>): Token {
   const mention = mentionLabel(g);
-  if (mention) return { kind: "mention", label: unescape(mention) };
+  if (mention) {
+    return {
+      kind: "mention",
+      label: unescape(mention.label),
+      target: mention.target,
+      userId: g.user,
+    };
+  }
   const href = g.href ?? g.bareUrl;
   if (href) {
     return { kind: "link", href: unescape(href), label: unescape(g.hrefLabel || href) };
@@ -57,7 +69,7 @@ function tokenOf(g: Record<string, string | undefined>): Token {
 /** Splits a message's text into the spans (tokens) a reader sees. Whatever
  *  the regex matches becomes a typed token, and whatever lies between two
  *  matches is plain text.
- *  `"Hi <@U04|wolle>"` -> `[{text "Hi "}, {mention "@wolle"}]` */
+ *  `"Hi <@U04|ada>"` -> `[{text "Hi "}, {mention "@ada"}]` */
 export function tokenize(text: string): Token[] {
   const out: Token[] = [];
   let last = 0;
