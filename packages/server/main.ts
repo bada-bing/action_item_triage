@@ -53,12 +53,12 @@ const server = Bun.serve({
         if (!decision.success) {
           return Response.json({ error: "not a decision" }, { status: 400 });
         }
-        const taken = await board.decide(
+        const done = await board.executeAction(
           decision.data.card_id,
           decision.data.action,
         );
-        if (!taken) {
-          return Response.json({ error: "no such card" }, { status: 404 });
+        if (!done) {
+          return Response.json({ error: "refused" }, { status: 400 });
         }
         return respond();
       },

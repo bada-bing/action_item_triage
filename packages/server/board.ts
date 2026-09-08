@@ -7,6 +7,10 @@ import type { ActionCard } from "@ait/contract/action-card";
 import type { Action } from "@ait/contract/source-item";
 import type { SlackItem, SlackRun } from "@ait/contract/slack";
 
+/** The actions something can carry out. One that is not is refused rather than
+ *  accepted and left half done. */
+const knownActions = new Set(["dismiss"]);
+
 export function openBoard(run: SlackRun) {
   const cards: ActionCard<SlackItem>[] = run.items.map((item) => ({
     item,
@@ -23,33 +27,34 @@ export function openBoard(run: SlackRun) {
     if (next) next.state = "now";
   }
 
-  /** The card waits while the action is carried out, then lands where the
-   *  action says. Handing it back is my turn again, so it holds no decision. */
-  async function executeAction(
-    card: ActionCard<SlackItem>,
-    action: Action,
-  ): Promise<void> {
-    card.state = "delegated";
-    card.decision = action;
-    ensureBoardHasNowCard();
-
-    // A placeholder: nothing carries an action out yet.
-
-    card.state = action.resolves ? "done" : "now";
-    card.decision = action.resolves ? action : null;
-    ensureBoardHasNowCard();
-  }
-
   ensureBoardHasNowCard();
 
   return {
     cards,
 
-    async decide(id: string, action: Action): Promise<boolean> {
+    /** The card waits while the action is carried out, then lands where the
+     *  action says. Handing it back is my turn again, so it holds no decision. */
+    async executeAction(id: string, action: Action): Promise<boolean> {
+      // Neither can be reached through the page, so either means a bug.
       const card = cards.find((c) => c.item.id === id);
-      if (!card) return false;
+      if (!card) {
+        console.error(`no such card: ${id}`);
+        return false;
+      }
+      if (!knownActions.has(action.name)) {
+        console.error(`unknown action: ${action.name}`);
+        return false;
+      }
 
-      await executeAction(card, action);
+      card.state = "delegated";
+      card.decision = action;
+      ensureBoardHasNowCard();
+
+      // A placeholder: nothing carries an action out yet.
+
+      card.state = action.resolves ? "done" : "now";
+      card.decision = action.resolves ? action : null;
+      ensureBoardHasNowCard();
       return true;
     },
   };
