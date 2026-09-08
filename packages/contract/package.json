@@ -6,7 +6,8 @@
   "exports": {
     "./slack": "./slack.ts",
     "./source-item": "./source-item.ts",
-    "./action-card": "./action-card.ts"
+    "./action-card": "./action-card.ts",
+    "./slack-markup": "./slack-markup.ts"
   },
   "dependencies": {
     "zod": "^4.0.0"

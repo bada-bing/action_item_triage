@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { User } from "@ait/contract/slack";
-  import { tokenize, type Token } from "./slack-markup.ts";
+  import { tokenize, type Token } from "@ait/contract/slack-markup";
 
   let {
     text,

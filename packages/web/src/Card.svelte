@@ -7,6 +7,8 @@
   import Proposals from "./Proposals.svelte";
   import Reactions from "./Reactions.svelte";
   import Transcript from "./Transcript.svelte";
+  import Copy from "./Copy.svelte";
+  import { plainText } from "@ait/contract/slack-markup";
   import { faceOf } from "./slack-user.ts";
   import { formatDate, formatTime } from "./slack-time.ts";
 
@@ -137,6 +139,10 @@
       />
     {/if}
 
+    <div class="toolbar">
+      <Copy text={plainText(message.text)} />
+    </div>
+
     {#if card.state === "now"}
       <Proposals
         proposals={item.proposals}
@@ -215,6 +221,12 @@
     flex-wrap: wrap;
     gap: 0.4rem;
     margin-bottom: 0.7rem;
+  }
+  /* What acts on the card itself, kept off the rows that report it. */
+  .toolbar {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.7rem;
   }
   .rows,
   .surface {

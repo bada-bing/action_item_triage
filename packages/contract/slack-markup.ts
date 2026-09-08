@@ -92,3 +92,12 @@ export function tokenize(text: string): Token[] {
   if (last < text.length) out.push({ kind: "text", text: unescape(text.slice(last)) });
   return out;
 }
+
+/** The same text for somewhere that renders nothing, so every markup ref
+ *  becomes what a reader would have seen.
+ *  `"Hi <@U04|ada>"` -> `"Hi @ada"` */
+export function plainText(text: string): string {
+  return tokenize(text)
+    .map((token) => (token.kind === "emoji" ? `:${token.name}:` : token.kind === "text" ? token.text : token.label))
+    .join("");
+}
