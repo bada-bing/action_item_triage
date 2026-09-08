@@ -60,71 +60,89 @@
   function nameOf(user: User): string {
     return user.id === me.id ? "You" : user.display;
   }
+
+  // The card whose turn it is opens by default, until I fold it by hand.
+  let foldedByHand = $state<boolean | undefined>();
+  const folded = $derived(foldedByHand ?? card.state !== "now");
 </script>
 
-<article class={card.state}>
-  <div class="why">
-    {#each item.context.reasons as reason (reason.raw)}
-      <ReasonBadge {reason} {face} {me} />
+{#snippet stack(size: "big" | "small")}
+  <span class="stack {size}">
+    {#each faces.slice(0, 3) as person, i (person.id)}
+      {#if faceOf(person)}
+        <img class="face" src={faceOf(person)} alt="" style="z-index: {3 - i}" />
+      {:else}
+        <span class="face initials" style="z-index: {3 - i}">{person.display.slice(0, 1)}</span>
+      {/if}
     {/each}
-    {#if rows > 1}<span class="rows">{rows} Slack rows</span>{/if}
-    <span class="surface">{surface}</span>
-  </div>
+  </span>
+{/snippet}
 
-  <header>
-    <span class="stack" style="--depth: {Math.min(faces.length, 3)}">
-      {#each faces.slice(0, 3) as person, i (person.id)}
-        {#if faceOf(person)}
-          <img class="face" src={faceOf(person)} alt="" style="z-index: {3 - i}" />
-        {:else}
-          <span class="face initials" style="z-index: {3 - i}"
-            >{person.display.slice(0, 1)}</span
-          >
-        {/if}
+<article class={card.state}>
+  {#if folded}
+    <button class="folded" onclick={() => (foldedByHand = false)} aria-label="open">
+      <ReasonBadge reason={item.context.reasons[0]!} {face} {me} />
+      {@render stack("small")}
+      <span class="line-summary">
+        {#if conversation.kind === "channel"}<span class="hash">#</span>{/if}{conversation.name}
+      </span>
+      <span class="surface">{surface}</span>
+      <span class="fold">▸</span>
+    </button>
+  {:else}
+    <button class="why" onclick={() => (foldedByHand = true)} aria-label="close">
+      {#each item.context.reasons as reason (reason.raw)}
+        <ReasonBadge {reason} {face} {me} />
       {/each}
-    </span>
-    <div class="who">
-      <div class="line">
-        <a class="where" href={item.meta.ref} target="_blank" rel="noreferrer">
-          {#if conversation.kind === "channel"}<span class="hash">#</span>{/if}
-          {conversation.name}
-          {#if item.context.location.thread}
-            <span class="sep">›</span><span class="thread">↳ thread</span>
-          {/if}
-        </a>
-        <span class="when">{formatDate(message.ts)} {formatTime(message.ts)}</span>
+      {#if rows > 1}<span class="rows">{rows} Slack rows</span>{/if}
+      <span class="surface">{surface}</span>
+      <span class="fold">▾</span>
+    </button>
+
+    <header>
+      {@render stack("big")}
+      <div class="who">
+        <div class="line">
+          <a class="where" href={item.meta.ref} target="_blank" rel="noreferrer">
+            {#if conversation.kind === "channel"}<span class="hash">#</span>{/if}
+            {conversation.name}
+            {#if item.context.location.thread}
+              <span class="sep">›</span><span class="thread">↳ thread</span>
+            {/if}
+          </a>
+          <span class="when">{formatDate(message.ts)} {formatTime(message.ts)}</span>
+        </div>
+        <span class="name">{facesLabel}</span>
       </div>
-      <span class="name">{facesLabel}</span>
-    </div>
-  </header>
+    </header>
 
-  <blockquote>
-    {#if attributed}<span class="attrib">{nameOf(message.author)}:</span>{/if}
-    <MessageText text={message.text} {me} {myGroups} {emoji} />
-    {#if message.reactions.length}
-      <Reactions reactions={message.reactions} {me} {emoji} />
+    <blockquote>
+      {#if attributed}<span class="attrib">{nameOf(message.author)}:</span>{/if}
+      <MessageText text={message.text} {me} {myGroups} {emoji} />
+      {#if message.reactions.length}
+        <Reactions reactions={message.reactions} {me} {emoji} />
+      {/if}
+    </blockquote>
+
+    {#if exchange.history.length > 1 || exchange.in_reply_to}
+      <Transcript
+        history={exchange.history}
+        subjectTs={message.ts}
+        inReplyTo={exchange.in_reply_to}
+        {myGroups}
+        isThread={item.context.location.thread !== null}
+        replyCount={exchange.reply_count}
+        {me}
+        {emoji}
+      />
     {/if}
-  </blockquote>
 
-  {#if card.state === "now"}
-    <Proposals
-      proposals={item.proposals}
-      decide={(action) => decide(item.id, action)}
-    />
-  {/if}
-
-
-  {#if exchange.history.length > 1 || exchange.in_reply_to}
-    <Transcript
-      history={exchange.history}
-      subjectTs={message.ts}
-      inReplyTo={exchange.in_reply_to}
-      {myGroups}
-      isThread={item.context.location.thread !== null}
-      replyCount={exchange.reply_count}
-      {me}
-      {emoji}
-    />
+    {#if card.state === "now"}
+      <Proposals
+        proposals={item.proposals}
+        decide={(action) => decide(item.id, action)}
+      />
+    {/if}
   {/if}
 </article>
 
@@ -134,6 +152,9 @@
     border: 1px solid var(--line);
     border-radius: 10px;
     padding: 1rem 1.1rem;
+  }
+  article:has(.folded) {
+    padding: 0.6rem 1.1rem;
   }
   /* Each state looks like what it is, so nothing has to label it. */
   article.now {
@@ -146,6 +167,47 @@
   }
   article.done {
     opacity: 0.45;
+  }
+  .folded,
+  .why {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .folded {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .line-summary {
+    min-width: 0;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .fold {
+    font-size: 11px;
+    line-height: 1;
+    color: var(--muted);
+    background: var(--btn-bg);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 5px 7px;
+    flex: none;
+  }
+  .folded:hover .fold,
+  .why:hover .fold {
+    color: var(--accent);
+    border-color: var(--accent);
   }
   .why {
     display: flex;
@@ -178,21 +240,35 @@
     gap: 0.6rem;
     margin-bottom: 0.7rem;
   }
-  /* Fixed at three faces whether or not there are three, so the channel and
-     the name start at the same place on every card. */
   .stack {
     display: flex;
     justify-content: center;
     flex: none;
+  }
+  /* Fixed at three faces whether or not there are three, so the channel and
+     the name start at the same place on every card. */
+  .stack.big {
     width: 66px;
   }
-  .stack .face + .face {
+  .stack.big .face {
+    width: 42px;
+    height: 42px;
+  }
+  .stack.big .face + .face {
     margin-left: -30px;
+  }
+  .stack.small .face {
+    width: 22px;
+    height: 22px;
+  }
+  .stack.small .face + .face {
+    margin-left: -12px;
+  }
+  .stack.small .initials {
+    font-size: 0.65rem;
   }
   .face {
     position: relative;
-    width: 42px;
-    height: 42px;
     border-radius: 50%;
     flex: none;
     object-fit: cover;

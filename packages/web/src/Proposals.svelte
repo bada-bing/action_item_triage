@@ -16,6 +16,8 @@
   }
 </script>
 
+<hr />
+
 <div class="proposals">
   {#each proposals as proposal (proposal.name)}
     <button onclick={() => decide(proposal)}>
@@ -25,6 +27,14 @@
 </div>
 
 <style>
+  /* Separates what happened from what can be done about it. */
+  hr {
+    border: none;
+    height: 10px;
+    border-radius: 5px;
+    background: var(--line);
+    margin: 0.9rem 0 0;
+  }
   .proposals {
     display: flex;
     flex-wrap: wrap;
