@@ -10,41 +10,36 @@ const RUN_FILE = process.env.RUN_FILE ??
   `${process.env.HOME}/Developer/src/action_item_triage/collectors/slack/out/current.json`;
 const PORT = Number(process.env.PORT ?? 3000);
 
-async function readRun() {
+/** Read once, since a different run means a restart anyway. */
+async function load(): Promise<SlackRun> {
   const file = Bun.file(RUN_FILE);
-  if (!(await file.exists())) return { error: `no run at ${RUN_FILE}` };
-
+  if (!(await file.exists())) {
+    console.error(`no run at ${RUN_FILE}`);
+    process.exit(1);
+  }
   const parsed = SlackRun.safeParse(await file.json());
-  // Serving a run that does not match the contract moves a collector bug into
-  // the page.
   if (!parsed.success) {
-    return {
-      error: `${RUN_FILE} does not match the contract`,
-      issues: parsed.error.issues.map(
-        (i) => `${i.path.join(".") || "(root)"}: ${i.message}`,
-      ),
-    };
+    console.error(`${RUN_FILE} does not match the contract:`);
+    for (const issue of parsed.error.issues) {
+      console.error(`  ${issue.path.join(".") || "(root)"}: ${issue.message}`);
+    }
+    process.exit(1);
   }
   return parsed.data;
 }
 
-/** The run's own fields, with cards in place of the items it read. */
-async function board() {
-  const parsed = await readRun();
-  if ("error" in parsed) return parsed;
-  const { items, ...rest } = parsed;
-  return { ...rest, cards: build(parsed) };
-}
+const run = await load();
 
-async function respond() {
-  const body = await board();
-  return Response.json(body, { status: "error" in body ? 502 : 200 });
+/** The run's own fields, with cards in place of the items it read. */
+function respond() {
+  const { items, ...rest } = run;
+  return Response.json({ ...rest, cards: build(run) });
 }
 
 const server = Bun.serve({
   port: PORT,
   routes: {
-    "/api/board": respond,
+    "/api/board": () => respond(),
     "/api/decision": {
       POST: async (request: Request) => {
         const decision = CardDecision.safeParse(await request.json());
@@ -59,4 +54,4 @@ const server = Bun.serve({
   fetch: () => new Response("not found", { status: 404 }),
 });
 
-console.log(`listening on ${server.url}  reading ${RUN_FILE}`);
+console.log(`listening on ${server.url}  ${run.items.length} items from ${RUN_FILE}`);
