@@ -1,8 +1,10 @@
 <script lang="ts">
   import type { ActionCard } from "@ait/contract/action-card";
+  import type { Action } from "@ait/contract/source-item";
   import type { SlackItem, User } from "@ait/contract/slack";
   import MessageText from "./MessageText.svelte";
   import ReasonBadge from "./ReasonBadge.svelte";
+  import Proposals from "./Proposals.svelte";
   import Reactions from "./Reactions.svelte";
   import Transcript from "./Transcript.svelte";
   import { faceOf } from "./slack-user.ts";
@@ -10,12 +12,14 @@
 
   let {
     card,
+    decide,
     me,
     myGroups,
     surface,
     emoji,
   }: {
     card: ActionCard<SlackItem>;
+    decide: (card_id: string, action: Action) => void;
     me: User;
     myGroups: string[];
     surface: string;
@@ -101,6 +105,13 @@
       <Reactions reactions={message.reactions} {me} {emoji} />
     {/if}
   </blockquote>
+
+  {#if card.state === "now"}
+    <Proposals
+      proposals={item.proposals}
+      decide={(action) => decide(item.id, action)}
+    />
+  {/if}
 
 
   {#if exchange.history.length > 1 || exchange.in_reply_to}

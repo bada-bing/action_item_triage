@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import type { ActionCard } from "./action-card.ts";
-import type { SourceItem } from "./source-item.ts";
+import { Action, type SourceItem } from "./source-item.ts";
 
 /** Anyone a card names. Slack calls them users, and a bot is one — which is
  *  why `is_bot` sits here rather than reading as a contradiction. */
@@ -111,6 +111,8 @@ export const SlackItem = z.object({
     /** The permalink the card opens. */
     ref: z.url(),
   }),
+
+  proposals: z.array(Action),
 });
 export type SlackItem = z.infer<typeof SlackItem>;
 
