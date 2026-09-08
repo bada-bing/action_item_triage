@@ -1,7 +1,9 @@
 // Serves a collector's run to the page. The collector writes a file and the
 // server reads it; nothing calls a collector and nothing waits for one.
 
+import { CardDecision } from "@ait/contract/action-card";
 import { SlackRun } from "@ait/contract/slack";
+import { build, decide } from "./board.ts";
 
 /** Which run to serve. Absolute, since runs do not live in this repository. */
 const RUN_FILE = process.env.RUN_FILE ??
@@ -26,12 +28,32 @@ async function readRun() {
   return parsed.data;
 }
 
+/** The run's own fields, with cards in place of the items it read. */
+async function board() {
+  const parsed = await readRun();
+  if ("error" in parsed) return parsed;
+  const { items, ...rest } = parsed;
+  return { ...rest, cards: build(parsed) };
+}
+
+async function respond() {
+  const body = await board();
+  return Response.json(body, { status: "error" in body ? 502 : 200 });
+}
+
 const server = Bun.serve({
   port: PORT,
   routes: {
-    "/api/run": async () => {
-      const body = await readRun();
-      return Response.json(body, { status: "error" in body ? 502 : 200 });
+    "/api/board": respond,
+    "/api/decision": {
+      POST: async (request: Request) => {
+        const decision = CardDecision.safeParse(await request.json());
+        if (!decision.success) {
+          return Response.json({ error: "not a decision" }, { status: 400 });
+        }
+        decide(decision.data.id, decision.data.state);
+        return respond();
+      },
     },
   },
   fetch: () => new Response("not found", { status: 404 }),

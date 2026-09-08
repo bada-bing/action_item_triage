@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { ActionCard } from "@ait/contract/action-card";
   import type { SlackItem, User } from "@ait/contract/slack";
   import MessageText from "./MessageText.svelte";
   import ReasonBadge from "./ReasonBadge.svelte";
@@ -8,19 +9,20 @@
   import { formatDate, formatTime } from "./slack-time.ts";
 
   let {
-    item,
+    card,
     me,
     myGroups,
     surface,
     emoji,
   }: {
-    item: SlackItem;
+    card: ActionCard<SlackItem>;
     me: User;
     myGroups: string[];
     surface: string;
     emoji: Record<string, string>;
   } = $props();
 
+  const item = $derived(card.item);
   const message = $derived(item.content.message);
   const conversation = $derived(item.context.location.conversation);
   // Whoever put this on the board, which for a reaction is not the author.
@@ -56,7 +58,7 @@
   }
 </script>
 
-<article>
+<article class={card.state}>
   <div class="why">
     {#each item.context.reasons as reason (reason.raw)}
       <ReasonBadge {reason} {face} {me} />
@@ -100,6 +102,7 @@
     {/if}
   </blockquote>
 
+
   {#if exchange.history.length > 1 || exchange.in_reply_to}
     <Transcript
       history={exchange.history}
@@ -120,6 +123,18 @@
     border: 1px solid var(--line);
     border-radius: 10px;
     padding: 1rem 1.1rem;
+  }
+  /* Each state looks like what it is, so nothing has to label it. */
+  article.now {
+    border-color: var(--accent);
+  }
+  /* In flight and not mine: unsettled, hence unsettled edges. */
+  article.delegated {
+    border-style: dashed;
+    border-color: var(--muted);
+  }
+  article.done {
+    opacity: 0.45;
   }
   .why {
     display: flex;

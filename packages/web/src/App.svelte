@@ -1,28 +1,39 @@
 <script lang="ts">
-  import type { SlackRun } from "@ait/contract/slack";
+  import type { SlackBoard } from "@ait/contract/slack";
   import Card from "./Card.svelte";
 
-  const run: Promise<SlackRun> = fetch("/api/run").then((r) =>
-    r.ok ? r.json() : r.json().then((e) => Promise.reject(new Error(e.error))),
-  );
+  async function get(path: string): Promise<SlackBoard> {
+    const response = await fetch(path);
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.error);
+    return body;
+  }
+
+  let board = $state<SlackBoard | undefined>();
+  let failure = $state<string | undefined>();
+
+  get("/api/board")
+    .then((b) => (board = b))
+    .catch((e) => (failure = e.message));
+
 </script>
 
 <main>
-  {#await run}
+  {#if failure}
+    <p class="note">{failure}</p>
+  {:else if !board}
     <p class="note">loading…</p>
-  {:then run}
-    {#each run.items as item (item.id)}
+  {:else}
+    {#each board.cards as card (card.item.id)}
       <Card
-        {item}
-        me={run.me}
-        myGroups={run.my_user_groups}
-        surface={run.surface}
-        emoji={run.custom_emoji_map}
+        {card}
+        me={board.me}
+        myGroups={board.my_user_groups}
+        surface={board.surface}
+        emoji={board.custom_emoji_map}
       />
     {/each}
-  {:catch error}
-    <p class="note">{error.message}</p>
-  {/await}
+  {/if}
 </main>
 
 <style>

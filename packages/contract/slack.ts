@@ -1,6 +1,7 @@
 // What the Slack collector writes, and what the server accepts from it.
 
 import { z } from "zod";
+import type { ActionCard } from "./action-card.ts";
 import type { SourceItem } from "./source-item.ts";
 
 /** Anyone a card names. Slack calls them users, and a bot is one — which is
@@ -143,3 +144,9 @@ export const SlackRun = z.object({
   items: z.array(SlackItem),
 });
 export type SlackRun = z.infer<typeof SlackRun>;
+
+/** What the server serves: the run's own fields, with cards in place of the
+ *  items it read. Not a schema — a run is validated, a board is assembled. */
+export type SlackBoard = Omit<SlackRun, "items"> & {
+  cards: ActionCard<SlackItem>[];
+};
