@@ -6,13 +6,22 @@
     text,
     me,
     emoji,
-  }: { text: string; me: User; emoji: Record<string, string> } = $props();
+    myGroups,
+  }: {
+    text: string;
+    me: User;
+    myGroups: string[];
+    emoji: Record<string, string>;
+  } = $props();
 
   /** How loudly a mention is drawn, on the same scale the reason chips use.
    *  Anything not addressed to me — a mention I wrote, a channel named in
    *  passing — is generic. */
   function tone(token: Token & { kind: "mention" }): string {
-    if (token.target === "group" || token.target === "broadcast") return token.target;
+    if (token.target === "broadcast") return "broadcast";
+    if (token.target === "group") {
+      return myGroups.includes(token.groupId ?? "") ? "group" : "generic";
+    }
     return token.userId === me.id ? "me" : "generic";
   }
 </script>
@@ -29,10 +38,15 @@
 {/each}
 
 <style>
+  /* Still a chip, so it reads as a handle rather than as words — just without
+     a hue, because it does not reach me. */
   .mention.generic {
     font-family: var(--mono);
     font-size: 0.85em;
     color: var(--muted);
+    background: var(--btn-bg);
+    border-radius: 4px;
+    padding: 0 4px;
   }
   .mention.me {
     font-weight: 600;
@@ -51,6 +65,9 @@
   .mention.broadcast {
     font-weight: 600;
     color: var(--broadcast);
+    background: var(--btn-bg);
+    border-radius: 4px;
+    padding: 0 4px;
   }
   a {
     color: var(--accent);

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Me, Message, User } from "@ait/contract/slack";
+  import type { Message, User } from "@ait/contract/slack";
   import MessageText from "./MessageText.svelte";
   import { faceOf } from "./slack-user.ts";
   import { formatDate, formatTime } from "./slack-time.ts";
@@ -11,6 +11,7 @@
     isThread,
     replyCount,
     me,
+    myGroups,
     emoji,
   }: {
     history: Message[];
@@ -18,7 +19,8 @@
     inReplyTo?: Message;
     isThread: boolean;
     replyCount: number;
-    me: Me;
+    me: User;
+    myGroups: string[];
     emoji: Record<string, string>;
   } = $props();
 
@@ -79,7 +81,7 @@
     {/if}
     <span class="who">{message.author.id === me.id ? "You" : message.author.display}</span>
     <span class="time">{formatTime(message.ts)}</span>
-    <MessageText text={message.text} {me} {emoji} />
+    <MessageText text={message.text} {me} {myGroups} {emoji} />
   </p>
 {/snippet}
 

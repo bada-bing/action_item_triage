@@ -12,7 +12,13 @@
     <p class="note">loading…</p>
   {:then run}
     {#each run.items as item (item.id)}
-      <Card {item} me={run.me} surface={run.surface} emoji={run.custom_emoji_map} />
+      <Card
+        {item}
+        me={run.me}
+        myGroups={run.my_user_groups}
+        surface={run.surface}
+        emoji={run.custom_emoji_map}
+      />
     {/each}
   {:catch error}
     <p class="note">{error.message}</p>

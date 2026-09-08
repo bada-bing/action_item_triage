@@ -55,10 +55,6 @@
     border-color: var(--broadcast);
     color: var(--broadcast);
   }
-  .reaction {
-    border-color: var(--muted);
-    color: var(--ink);
-  }
   .actor {
     text-transform: none;
     color: var(--ink);

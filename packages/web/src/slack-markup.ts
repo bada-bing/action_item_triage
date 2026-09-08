@@ -10,7 +10,13 @@ export type MentionTarget = "user" | "channel" | "group" | "broadcast";
 
 export type Token =
   | { kind: "text"; text: string }
-  | { kind: "mention"; label: string; target: MentionTarget; userId?: string }
+  | {
+      kind: "mention";
+      label: string;
+      target: MentionTarget;
+      userId?: string;
+      groupId?: string;
+    }
   | { kind: "link"; href: string; label: string }
   | { kind: "emoji"; name: string };
 
@@ -57,6 +63,7 @@ function tokenOf(g: Record<string, string | undefined>): Token {
       label: unescape(mention.label),
       target: mention.target,
       userId: g.user,
+      groupId: g.group,
     };
   }
   const href = g.href ?? g.bareUrl;

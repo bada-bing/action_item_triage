@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Me, SlackItem, User } from "@ait/contract/slack";
+  import type { SlackItem, User } from "@ait/contract/slack";
   import MessageText from "./MessageText.svelte";
   import ReasonBadge from "./ReasonBadge.svelte";
   import Reactions from "./Reactions.svelte";
@@ -10,11 +10,13 @@
   let {
     item,
     me,
+    myGroups,
     surface,
     emoji,
   }: {
     item: SlackItem;
-    me: Me;
+    me: User;
+    myGroups: string[];
     surface: string;
     emoji: Record<string, string>;
   } = $props();
@@ -92,7 +94,7 @@
 
   <blockquote>
     {#if attributed}<span class="attrib">{nameOf(message.author)}:</span>{/if}
-    <MessageText text={message.text} {me} {emoji} />
+    <MessageText text={message.text} {me} {myGroups} {emoji} />
     {#if message.reactions.length}
       <Reactions reactions={message.reactions} {me} {emoji} />
     {/if}
@@ -103,6 +105,7 @@
       history={exchange.history}
       subjectTs={message.ts}
       inReplyTo={exchange.in_reply_to}
+      {myGroups}
       isThread={item.context.location.thread !== null}
       replyCount={exchange.reply_count}
       {me}
