@@ -43,10 +43,15 @@ export function openBoard(run: SlackRun) {
     /** The card waits while the action is carried out, then lands where the
      *  action says. Handing it back is my turn again, so it holds no decision. */
     async executeAction(id: string, action: Action): Promise<boolean> {
-      // Neither can be reached through the page, so either means a bug.
+      // None of the three can be reached through the page: an unknown card or
+      // action is a bug, and a card that is not mine has already been decided.
       const card = cards.find((c) => c.item.id === id);
       if (!card) {
         console.error(`no such card: ${id}`);
+        return false;
+      }
+      if (card.state !== "now") {
+        console.error(`card ${id} is ${card.state}, not now`);
         return false;
       }
       const execute = executors[action.name];
