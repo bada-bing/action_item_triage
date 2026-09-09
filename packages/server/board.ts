@@ -38,12 +38,37 @@ export function openBoard(run: SlackRun) {
 
   ensureBoardHasNowCard();
 
+  /** Run the executor and write where the card landed: `done` if the action
+   *  resolves it, otherwise back with me. Nobody is waiting for this, so a
+   *  failure is written onto the card rather than thrown. */
+  async function executeAction(
+    card: ActionCard<SlackItem>,
+    action: Action,
+    execute: (item: SlackItem, action: Action) => Promise<void>,
+  ): Promise<void> {
+    try {
+      await execute(card.item, action);
+    } catch (failure) {
+      const why = failure instanceof Error ? failure.message : String(failure);
+      console.error(`${action.name} failed on ${card.item.id}:`, failure);
+      card.state = "now";
+      card.decision = null;
+      card.annotation = `${action.name} failed: ${why}`;
+      return;
+    }
+
+    card.state = action.resolves ? "done" : "now";
+    card.decision = action.resolves ? action : null;
+    card.annotation = null;
+    ensureBoardHasNowCard();
+  }
+
   return {
     cards,
 
-    /** The card waits while the action is carried out, then lands where the
-     *  action says. Handing it back is my turn again, so it holds no decision. */
-    async executeAction(id: string, action: Action): Promise<boolean> {
+    /** Delegate the card and say whether that happened; the executor runs on
+     *  its own, since how long it takes is not the decision's concern. */
+    delegateAction(id: string, action: Action): boolean {
       // None of the three can be reached through the page: an unknown card or
       // action is a bug, and a card that is not mine has already been decided.
       const card = cards.find((c) => c.item.id === id);
@@ -67,23 +92,7 @@ export function openBoard(run: SlackRun) {
       card.annotation = null;
       ensureBoardHasNowCard();
 
-      try {
-        await execute(card.item, action);
-      } catch (failure) {
-        // Still an accepted decision, so the board goes back with the failure
-        // on it.
-        const why = failure instanceof Error ? failure.message : String(failure);
-        console.error(`${action.name} failed on ${id}:`, failure);
-        card.state = "now";
-        card.decision = null;
-        card.annotation = `${action.name} failed: ${why}`;
-        return true;
-      }
-
-      card.state = action.resolves ? "done" : "now";
-      card.decision = action.resolves ? action : null;
-      card.annotation = null;
-      ensureBoardHasNowCard();
+      void executeAction(card, action, execute);
       return true;
     },
   };

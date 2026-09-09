@@ -3,19 +3,29 @@
   import type { SlackBoard } from "@ait/contract/slack";
   import Card from "./Card.svelte";
 
-  async function get(path: string, init?: RequestInit): Promise<SlackBoard> {
-    const response = await fetch(path, init);
+  async function get(path: string): Promise<SlackBoard> {
+    const response = await fetch(path);
     const body = await response.json();
     if (!response.ok) throw new Error(body.error);
     return body;
   }
 
+  /** A command, which answers with an acknowledgment rather than a board. */
+  async function post(path: string, body: unknown): Promise<void> {
+    const response = await fetch(path, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) throw new Error((await response.json()).error);
+  }
+
   let board = $state<SlackBoard | undefined>();
   let failure = $state<string | undefined>();
 
-  /** Report the decision; the server returns the board it produced. Every
-   *  accepted decision passes through `delegated` there, so the card is put
-   *  there at once rather than sitting live until the executor is done. */
+  /** Report the decision and show it as delegated, which is all the reply
+   *  confirms: the card is the executor's now, and where it ends up is a
+   *  change the page hears about separately. */
   async function decide(card_id: string, action: Action) {
     const card = board?.cards.find((c) => c.item.id === card_id);
     if (card) {
@@ -24,11 +34,7 @@
       card.annotation = null;
     }
     try {
-      board = await get("/api/decision", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ card_id, action }),
-      });
+      await post("/api/decision", { card_id, action });
     } catch (e) {
       // The anticipated state is now a guess about a request that failed.
       failure = e instanceof Error ? e.message : String(e);

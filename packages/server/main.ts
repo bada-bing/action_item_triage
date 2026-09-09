@@ -53,14 +53,16 @@ const server = Bun.serve({
         if (!decision.success) {
           return Response.json({ error: "not a decision" }, { status: 400 });
         }
-        const done = await board.executeAction(
+        const accepted = board.delegateAction(
           decision.data.card_id,
           decision.data.action,
         );
-        if (!done) {
+        if (!accepted) {
           return Response.json({ error: "refused" }, { status: 400 });
         }
-        return respond();
+        // The card is delegated and the executor is running. What it does with
+        // the card is a later change, not this reply.
+        return Response.json({ accepted: true }, { status: 202 });
       },
     },
   },
