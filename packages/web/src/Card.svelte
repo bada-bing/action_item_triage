@@ -80,7 +80,7 @@
   </span>
 {/snippet}
 
-<article class={card.state}>
+<article class={card.state} class:annotated={!!card.annotation}>
   {#if folded}
     <button class="folded" onclick={() => (foldedByHand = false)} aria-label="open">
       <ReasonBadge reason={item.context.reasons[0]!} {face} {me} />
@@ -139,6 +139,10 @@
       />
     {/if}
 
+    {#if card.annotation}
+      <p class="annotation">{card.annotation}</p>
+    {/if}
+
     <div class="toolbar">
       <Copy text={plainText(message.text)} />
     </div>
@@ -173,6 +177,12 @@
   }
   article.done {
     opacity: 0.45;
+  }
+  /* Something happened to this card, so it is not a fresh turn. Last, so it
+     outranks the state's own colour. */
+  article.annotated {
+    border-color: var(--warn);
+    box-shadow: 0 0 0 2px var(--warn-soft);
   }
   .folded,
   .why {
@@ -221,6 +231,17 @@
     flex-wrap: wrap;
     gap: 0.4rem;
     margin-bottom: 0.7rem;
+  }
+  .annotation {
+    margin: 0.8rem 0 0;
+    padding: 8px 12px;
+    border-left: 3px solid var(--warn);
+    border-radius: 0 6px 6px 0;
+    background: var(--warn-soft);
+    color: var(--warn);
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
   }
   /* What acts on the card itself, kept off the rows that report it. */
   .toolbar {

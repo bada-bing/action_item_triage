@@ -24,6 +24,7 @@ export function openBoard(run: SlackRun) {
     item,
     state: "later",
     decision: null,
+    annotation: null,
   }));
 
   /** If no card is `now`, make the first `later` one now. Items arrive newest
@@ -60,20 +61,28 @@ export function openBoard(run: SlackRun) {
         return false;
       }
 
+      // A decision is a fresh attempt, so whatever the last one said is gone.
       card.state = "delegated";
       card.decision = action;
+      card.annotation = null;
       ensureBoardHasNowCard();
 
       try {
         await execute(card.item, action);
       } catch (failure) {
-        // The card stays delegated, since nothing knows how far it got.
+        // Still an accepted decision, so the board goes back with the failure
+        // on it.
+        const why = failure instanceof Error ? failure.message : String(failure);
         console.error(`${action.name} failed on ${id}:`, failure);
-        return false;
+        card.state = "now";
+        card.decision = null;
+        card.annotation = `${action.name} failed: ${why}`;
+        return true;
       }
 
       card.state = action.resolves ? "done" : "now";
       card.decision = action.resolves ? action : null;
+      card.annotation = null;
       ensureBoardHasNowCard();
       return true;
     },

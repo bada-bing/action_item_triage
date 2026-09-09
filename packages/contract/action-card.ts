@@ -15,4 +15,7 @@ export interface ActionCard<T extends SourceItem = SourceItem> {
   /** The action in force: what a delegated card is delegated for, what a done
    *  card was ended by, null while it is my turn. */
   decision: Action | null;
+  /** What happened, where the card cannot say it by itself: so far, why an
+   *  executor failed. */
+  annotation: string | null;
 }
