@@ -11,16 +11,30 @@
   }
 
   let board = $state<SlackBoard | undefined>();
-
-  /** Report the decision; the server returns the board it produced. */
-  async function decide(card_id: string, action: Action) {
-    board = await get("/api/decision", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ card_id, action }),
-    });
-  }
   let failure = $state<string | undefined>();
+
+  /** Report the decision; the server returns the board it produced. Every
+   *  accepted decision passes through `delegated` there, so the card is put
+   *  there at once rather than sitting live until the executor is done. */
+  async function decide(card_id: string, action: Action) {
+    const card = board?.cards.find((c) => c.item.id === card_id);
+    if (card) {
+      card.state = "delegated";
+      card.decision = action;
+      card.annotation = null;
+    }
+    try {
+      board = await get("/api/decision", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ card_id, action }),
+      });
+    } catch (e) {
+      // The anticipated state is now a guess about a request that failed.
+      failure = e instanceof Error ? e.message : String(e);
+      board = await get("/api/board");
+    }
+  }
 
   get("/api/board")
     .then((b) => (board = b))
@@ -31,8 +45,9 @@
 <main>
   {#if failure}
     <p class="note">{failure}</p>
-  {:else if !board}
-    <p class="note">loading…</p>
+  {/if}
+  {#if !board}
+    {#if !failure}<p class="note">loading…</p>{/if}
   {:else}
     {#each board.cards as card (card.item.id)}
       <Card
