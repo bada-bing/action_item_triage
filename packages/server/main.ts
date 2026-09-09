@@ -4,6 +4,7 @@
 import { z } from "zod";
 import { SlackRun } from "@ait/contract/slack";
 import { Action } from "@ait/contract/source-item";
+import type { Announcement } from "@ait/contract/announcement";
 import { openBoard } from "./board.ts";
 
 /** Which card, and the action I chose. It travels whole, so an argument I
@@ -33,8 +34,18 @@ async function load(): Promise<SlackRun> {
   return parsed.data;
 }
 
+/** The one topic every open page subscribes to. */
+const EVENTS = "board";
+
+/** Say that the board changed, to whoever is listening and to nobody in
+ *  particular: what changed is the board's business, and the page pulls it. */
+function announce(): void {
+  const announcement: Announcement = { kind: "board-changed" };
+  server.publish(EVENTS, JSON.stringify(announcement));
+}
+
 const run = await load();
-const board = openBoard(run);
+const board = openBoard(run, announce);
 
 /** The run's own fields, which never change; the cards go beside them. */
 const { items, ...runFields } = run;
@@ -47,6 +58,10 @@ const server = Bun.serve({
   port: PORT,
   routes: {
     "/api/board": () => respond(),
+    "/api/events": (request, server) =>
+      server.upgrade(request)
+        ? undefined
+        : new Response("expected a websocket", { status: 426 }),
     "/api/decision": {
       POST: async (request: Request) => {
         const decision = Body.safeParse(await request.json());
@@ -65,6 +80,13 @@ const server = Bun.serve({
         return Response.json({ accepted: true }, { status: 202 });
       },
     },
+  },
+  websocket: {
+    open: (socket) => {
+      socket.subscribe(EVENTS);
+    },
+    // A page only listens: every decision it takes goes over HTTP.
+    message: () => {},
   },
   fetch: () => new Response("not found", { status: 404 }),
 });

@@ -19,7 +19,9 @@ const executors: Record<
   "create-errand": createErrand,
 };
 
-export function openBoard(run: SlackRun) {
+/** `announce` is called once per change, whatever it moved: an event says only
+ *  that the board is no longer what a page pulled. */
+export function openBoard(run: SlackRun, announce: () => void) {
   const cards: ActionCard<SlackItem>[] = run.items.map((item) => ({
     item,
     state: "later",
@@ -54,6 +56,7 @@ export function openBoard(run: SlackRun) {
       card.state = "now";
       card.decision = null;
       card.annotation = `${action.name} failed: ${why}`;
+      announce();
       return;
     }
 
@@ -61,6 +64,7 @@ export function openBoard(run: SlackRun) {
     card.decision = action.resolves ? action : null;
     card.annotation = null;
     ensureBoardHasNowCard();
+    announce();
   }
 
   return {
@@ -91,6 +95,8 @@ export function openBoard(run: SlackRun) {
       card.decision = action;
       card.annotation = null;
       ensureBoardHasNowCard();
+
+      announce();
 
       void executeAction(card, action, execute);
       return true;
