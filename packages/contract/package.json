@@ -7,7 +7,8 @@
     "./slack": "./slack.ts",
     "./source-item": "./source-item.ts",
     "./action-card": "./action-card.ts",
-    "./slack-markup": "./slack-markup.ts"
+    "./slack-markup": "./slack-markup.ts",
+    "./announcement": "./announcement.ts"
   },
   "dependencies": {
     "zod": "^4.0.0"
