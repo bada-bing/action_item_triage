@@ -32,6 +32,11 @@
   --warn: #9a6212;
   --warn-soft: #fbeed6;
 
+  /* an executor holds it, so it is nobody's turn: a step from the accent, and
+     filled, since a card being worked on is not a card offering a choice */
+  --busy: #0fa9a0;
+  --busy-soft: #d9f4f1;
+
   --sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, monospace;
 }
@@ -56,6 +61,9 @@
 
     --warn: #e0a94f;
     --warn-soft: #3a2c17;
+
+    --busy: #55d6c8;
+    --busy-soft: #10302d;
   }
 }
 

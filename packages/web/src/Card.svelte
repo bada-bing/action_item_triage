@@ -63,9 +63,11 @@
     return user.id === me.id ? "You" : user.display;
   }
 
-  // The card whose turn it is opens by default, until I fold it by hand.
+  // A card being worked on stays in view, whether the turn is mine or an
+  // executor's; a queued or finished one folds, until I say otherwise by hand.
   let foldedByHand = $state<boolean | undefined>();
-  const folded = $derived(foldedByHand ?? card.state !== "now");
+  const worked = $derived(card.state === "now" || card.state === "delegated");
+  const folded = $derived(foldedByHand ?? !worked);
 </script>
 
 {#snippet stack(size: "big" | "small")}
@@ -170,10 +172,11 @@
   article.now {
     border-color: var(--accent);
   }
-  /* In flight and not mine: unsettled, hence unsettled edges. */
+  /* In flight and not mine: the accent's neighbour, and filled. */
   article.delegated {
-    border-style: dashed;
-    border-color: var(--muted);
+    border-color: color-mix(in srgb, var(--busy) 40%, transparent);
+    background: var(--busy-soft);
+    opacity: 0.6;
   }
   article.done {
     opacity: 0.45;
