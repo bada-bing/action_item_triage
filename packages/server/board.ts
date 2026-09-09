@@ -6,10 +6,18 @@
 import type { ActionCard } from "@ait/contract/action-card";
 import type { Action } from "@ait/contract/source-item";
 import type { SlackItem, SlackRun } from "@ait/contract/slack";
+import { createErrand } from "./executors/create-errand.ts";
 
-/** The actions something can carry out. One that is not is refused rather than
- *  accepted and left half done. */
-const knownActions = new Set(["dismiss"]);
+/** What carries each action out. An action with no executor is refused rather
+ *  than accepted and left half done. */
+const executors: Record<
+  string,
+  (item: SlackItem, action: Action) => Promise<void>
+> = {
+  // Dismissing is the decision itself: nothing outside the board changes.
+  dismiss: async () => {},
+  "create-errand": createErrand,
+};
 
 export function openBoard(run: SlackRun) {
   const cards: ActionCard<SlackItem>[] = run.items.map((item) => ({
@@ -41,7 +49,8 @@ export function openBoard(run: SlackRun) {
         console.error(`no such card: ${id}`);
         return false;
       }
-      if (!knownActions.has(action.name)) {
+      const execute = executors[action.name];
+      if (!execute) {
         console.error(`unknown action: ${action.name}`);
         return false;
       }
@@ -50,7 +59,13 @@ export function openBoard(run: SlackRun) {
       card.decision = action;
       ensureBoardHasNowCard();
 
-      // A placeholder: nothing carries an action out yet.
+      try {
+        await execute(card.item, action);
+      } catch (failure) {
+        // The card stays delegated, since nothing knows how far it got.
+        console.error(`${action.name} failed on ${id}:`, failure);
+        return false;
+      }
 
       card.state = action.resolves ? "done" : "now";
       card.decision = action.resolves ? action : null;
