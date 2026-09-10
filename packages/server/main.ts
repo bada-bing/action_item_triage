@@ -39,8 +39,7 @@ const EVENTS = "board";
 
 /** Say that the board changed, to whoever is listening and to nobody in
  *  particular: what changed is the board's business, and the page pulls it. */
-function announce(): void {
-  const announcement: Announcement = { kind: "board-changed" };
+function announce(announcement: Announcement): void {
   server.publish(EVENTS, JSON.stringify(announcement));
 }
 

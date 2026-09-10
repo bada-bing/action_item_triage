@@ -4,6 +4,7 @@
 // uncleared.
 
 import type { ActionCard } from "@ait/contract/action-card";
+import type { Announcement } from "@ait/contract/announcement";
 import type { Action } from "@ait/contract/source-item";
 import type { SlackItem, SlackRun } from "@ait/contract/slack";
 import { createErrand } from "./executors/create-errand.ts";
@@ -19,9 +20,12 @@ const executors: Record<
   "create-errand": createErrand,
 };
 
-/** `announce` is called once per change, whatever it moved: an event says only
- *  that the board is no longer what a page pulled. */
-export function openBoard(run: SlackRun, announce: () => void) {
+/** `announce` is called once per change, whatever it moved, with a line for
+ *  whoever reads the socket. */
+export function openBoard(
+  run: SlackRun,
+  announce: (announcement: Announcement) => void,
+) {
   const cards: ActionCard<SlackItem>[] = run.items.map((item) => ({
     item,
     state: "later",
@@ -56,7 +60,10 @@ export function openBoard(run: SlackRun, announce: () => void) {
       card.state = "now";
       card.decision = null;
       card.annotation = `${action.name} failed: ${why}`;
-      announce();
+      announce({
+        kind: "action-failed",
+        because: `${action.name} failed on ${card.item.id}: ${why}`,
+      });
       return;
     }
 
@@ -64,7 +71,10 @@ export function openBoard(run: SlackRun, announce: () => void) {
     card.decision = action.resolves ? action : null;
     card.annotation = null;
     ensureBoardHasNowCard();
-    announce();
+    announce({
+      kind: "action-finished",
+      because: `${action.name} finished on ${card.item.id}, card ${card.state}`,
+    });
   }
 
   return {
@@ -96,7 +106,10 @@ export function openBoard(run: SlackRun, announce: () => void) {
       card.annotation = null;
       ensureBoardHasNowCard();
 
-      announce();
+      announce({
+        kind: "action-delegated",
+        because: `${action.name} delegated on ${id}`,
+      });
 
       void executeAction(card, action, execute);
       return true;

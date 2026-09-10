@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { Action } from "@ait/contract/source-item";
+  import type { Announcement } from "@ait/contract/announcement";
   import type { SlackBoard } from "@ait/contract/slack";
+  import { fade } from "svelte/transition";
   import Card from "./Card.svelte";
 
   async function get(path: string): Promise<SlackBoard> {
@@ -22,9 +24,21 @@
 
   /** How long to wait before reaching for a server that went away. */
   const RECONNECT = 1000;
+  /** How long an announcement stays on screen. */
+  const NOTICE = 4000;
 
   let board = $state<SlackBoard | undefined>();
   let failure = $state<string | undefined>();
+  let notice = $state<string | undefined>();
+  let clearing: ReturnType<typeof setTimeout>;
+
+  /** Say what the server said it did. Nothing on the page depends on it: it is
+   *  there to be read while working. */
+  function show(because: string) {
+    notice = because;
+    clearTimeout(clearing);
+    clearing = setTimeout(() => (notice = undefined), NOTICE);
+  }
 
   /** Take the board whole, since an announcement says only that it changed. */
   async function pull() {
@@ -41,7 +55,13 @@
   function listen() {
     const socket = new WebSocket(`ws://${location.host}/api/events`);
     socket.onopen = pull;
-    socket.onmessage = pull;
+    socket.onmessage = (frame) => {
+      const announcement: Announcement = JSON.parse(frame.data);
+      // A delegation is the one change the page anticipated, so it goes
+      // without saying.
+      if (announcement.kind !== "action-delegated") show(announcement.because);
+      pull();
+    };
     socket.onclose = () => {
       if (!board) failure = "no server";
       setTimeout(listen, RECONNECT);
@@ -91,6 +111,10 @@
   {/if}
 </main>
 
+{#if notice}
+  <p class="notice" transition:fade={{ duration: 150 }}>{notice}</p>
+{/if}
+
 <style>
   main {
     max-width: 780px;
@@ -104,5 +128,24 @@
     color: var(--muted);
     font-size: 0.85rem;
     margin: 0;
+  }
+  /* Whatever the server last said, in passing. */
+  .notice {
+    position: fixed;
+    left: 50%;
+    bottom: 1.2rem;
+    transform: translateX(-50%);
+    max-width: min(90vw, 620px);
+    margin: 0;
+    padding: 7px 13px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 </style>
