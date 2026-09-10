@@ -20,8 +20,33 @@
     if (!response.ok) throw new Error((await response.json()).error);
   }
 
+  /** How long to wait before reaching for a server that went away. */
+  const RECONNECT = 1000;
+
   let board = $state<SlackBoard | undefined>();
   let failure = $state<string | undefined>();
+
+  /** Take the board whole, since an announcement says only that it changed. */
+  async function pull() {
+    try {
+      board = await get("/api/board");
+      failure = undefined;
+    } catch (e) {
+      failure = e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  /** Pull on opening as much as on an announcement: a socket that has just
+   *  connected was deaf to whatever changed before it. */
+  function listen() {
+    const socket = new WebSocket(`ws://${location.host}/api/events`);
+    socket.onopen = pull;
+    socket.onmessage = pull;
+    socket.onclose = () => {
+      if (!board) failure = "no server";
+      setTimeout(listen, RECONNECT);
+    };
+  }
 
   /** Report the decision and show it as delegated, which is all the reply
    *  confirms: the card is the executor's now, and where it ends up is a
@@ -36,15 +61,13 @@
     try {
       await post("/api/decision", { card_id, action });
     } catch (e) {
-      // The anticipated state is now a guess about a request that failed.
+      // The anticipated state was a guess about a request that failed.
+      await pull();
       failure = e instanceof Error ? e.message : String(e);
-      board = await get("/api/board");
     }
   }
 
-  get("/api/board")
-    .then((b) => (board = b))
-    .catch((e) => (failure = e.message));
+  listen();
 
 </script>
 

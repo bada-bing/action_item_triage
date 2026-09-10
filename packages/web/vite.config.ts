@@ -5,5 +5,10 @@ export default defineConfig({
   plugins: [svelte()],
   // The run is the server's to read and validate, so the page always asks it
   // rather than reaching for a file itself.
-  server: { proxy: { "/api": "http://localhost:3000" } },
+  server: {
+    proxy: {
+      "/api/events": { target: "ws://localhost:3000", ws: true },
+      "/api": "http://localhost:3000",
+    },
+  },
 });
