@@ -174,8 +174,12 @@
   }
   /* The message the card is about keeps the strongest edge, in ink; the one it
      answers takes the accent, so the two markers cannot be confused. */
+  /* The message the card is about, so the eye can find it in a long thread:
+     the same ground as the quote above, which is the same message. */
   .line.subject {
     box-shadow: inset 2px 0 0 var(--ink);
+    background: var(--subject);
+    color: var(--ink);
   }
   /* Said where the missing replies would be, rather than in the label alone. */
   .elided {
