@@ -134,7 +134,8 @@
         subjectTs={message.ts}
         inReplyTo={exchange.in_reply_to}
         {myGroups}
-        isThread={item.context.location.thread !== null}
+        isThread={exchange.reply_count > 0}
+        ref={item.meta.ref}
         replyCount={exchange.reply_count}
         {me}
         {emoji}

@@ -10,6 +10,7 @@
     inReplyTo,
     isThread,
     replyCount,
+    ref,
     me,
     myGroups,
     emoji,
@@ -19,6 +20,7 @@
     inReplyTo?: Message;
     isThread: boolean;
     replyCount: number;
+    ref: string;
     me: User;
     myGroups: string[];
     emoji: Record<string, string>;
@@ -26,12 +28,17 @@
 
   let open = $state(false);
 
-  // A thread's true length is the reply count; an exchange has only what was
-  // walked back, so it counts what expanding actually shows.
+  // A thread's true length is the reply count, and the transcript may hold only
+  // its end — so the label says which of the two it is rather than counting
+  // what happens to be here and calling that the thread.
+  const held = $derived(history.length - 1);
+  const missing = $derived(isThread ? Math.max(replyCount - held, 0) : 0);
   const label = $derived(
-    isThread
-      ? `the whole thread · ${replyCount} replies`
-      : `the exchange · ${history.length} messages`,
+    !isThread
+      ? `the exchange · ${history.length} messages`
+      : missing
+        ? `the newest ${held} of ${replyCount} replies`
+        : `the whole thread · ${replyCount} replies`,
   );
 
   function dayOf(ts: string): string {
@@ -55,6 +62,12 @@
 
 {#if open}
   <div class="lines">
+    {#if missing}
+      <p class="elided">
+        {missing} earlier {missing === 1 ? "reply" : "replies"} not here —
+        <a href={ref} target="_blank" rel="noreferrer">open in Slack</a>
+      </p>
+    {/if}
     {#each history as message, i (message.ts)}
       {#if i > 0 && dayOf(message.ts) !== dayOf(history[i - 1]!.ts)}
         <p class="day">{formatDate(message.ts)}</p>
@@ -163,6 +176,17 @@
      answers takes the accent, so the two markers cannot be confused. */
   .line.subject {
     box-shadow: inset 2px 0 0 var(--ink);
+  }
+  /* Said where the missing replies would be, rather than in the label alone. */
+  .elided {
+    margin: 0 0 2px;
+    padding: 2px 6px 2px 10px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .elided a {
+    color: inherit;
   }
   .line.answers {
     box-shadow: inset 2px 0 0 var(--accent);
