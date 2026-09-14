@@ -49,6 +49,11 @@
 
 {#if inReplyTo && !open}
   <div class="antecedent">
+    <!-- Only its time otherwise, which reads as the same day when a thread has
+         been running for days. -->
+    {#if dayOf(inReplyTo.ts) !== dayOf(subjectTs)}
+      <p class="day">{formatDate(inReplyTo.ts)}</p>
+    {/if}
     {@render line(inReplyTo, true, true)}
   </div>
 {/if}
