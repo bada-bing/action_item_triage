@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Message, User } from "@ait/contract/slack";
   import MessageText from "./MessageText.svelte";
+  import Reactions from "./Reactions.svelte";
   import { faceOf } from "./slack-user.ts";
   import { formatDate, formatTime } from "./slack-time.ts";
 
@@ -69,7 +70,7 @@
       </p>
     {/if}
     {#each history as message, i (message.ts)}
-      {#if i > 0 && dayOf(message.ts) !== dayOf(history[i - 1]!.ts)}
+      {#if i === 0 || dayOf(message.ts) !== dayOf(history[i - 1]!.ts)}
         <p class="day">{formatDate(message.ts)}</p>
       {/if}
       {@render line(message, message.ts === inReplyTo?.ts, false)}
@@ -95,6 +96,9 @@
     <span class="who">{message.author.id === me.id ? "You" : message.author.display}</span>
     <span class="time">{formatTime(message.ts)}</span>
     <MessageText text={message.text} {me} {myGroups} {emoji} />
+    {#if message.reactions.length}
+      <Reactions reactions={message.reactions} {me} {emoji} />
+    {/if}
   </p>
 {/snippet}
 
