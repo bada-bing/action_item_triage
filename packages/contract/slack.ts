@@ -30,7 +30,9 @@ export type Reaction = z.infer<typeof Reaction>;
  *  already has, and a standard shortcode becomes its glyph.
  *
  *  An invitation has no message anyone wrote, so the collector states the
- *  event and attributes it to whoever did it, as Slack's own row does. */
+ *  event and attributes it to whoever did it, as Slack's own row does. A
+ *  channel post and an app's dm both lead with the newest message in the
+ *  conversation, since Slack keys them by conversation and not by message. */
 export const Message = z.object({
   ts: z.string(),
   text: z.string(),
@@ -45,7 +47,8 @@ export type Message = z.infer<typeof Message>;
 export const Reason = z.object({
   reason: z.enum([
     "mention.direct", "mention.group", "mention.broadcast",
-    "reply.thread", "reaction", "dm", "reminder", "invitation",
+    "reply.thread", "reaction", "dm.user", "dm.app",
+    "channel.post", "channel.invitation", "reminder",
   ]),
   ts: z.string(),
   /** Slack's own key for the row, kept as provenance. */
