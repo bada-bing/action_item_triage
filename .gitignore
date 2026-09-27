@@ -7,3 +7,4 @@ collectors/*/out/
 collectors/*/scratchpad/
 .DS_Store
 errands.md
+.env

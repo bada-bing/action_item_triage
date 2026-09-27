@@ -11,9 +11,14 @@ import { openBoard } from "./board.ts";
  *  supplied arrives with it. */
 const Body = z.object({ card_id: z.string(), action: Action });
 
-/** Which run to serve. Absolute, since runs do not live in this repository. */
-const RUN_FILE = process.env.RUN_FILE ??
-  `${process.env.HOME}/Developer/src/action_item_triage/collectors/slack/out/current.json`;
+/** Which run to serve: the Slack collector's current one, which it replaces
+ *  with each new run. Absolute, since runs do not live in this repository —
+ *  set in packages/server/.env. */
+const RUN_FILE = process.env.TRIAGE_SLACK_CURRENT ?? "";
+if (!RUN_FILE) {
+  console.error("TRIAGE_SLACK_CURRENT is not set — put the Slack collector's current run in packages/server/.env");
+  process.exit(1);
+}
 const PORT = Number(process.env.PORT ?? 3000);
 
 /** Read once, since a different run means a restart anyway. */

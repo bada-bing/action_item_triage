@@ -8,7 +8,7 @@ in which I dispose of them.
 | Path | Is | Does |
 |------|----|------|
 | `collectors/slack/` | a Claude session | works Slack, writes a batch to `out/` |
-| `packages/server/` | a Bun process | watches `out/`, holds the batch, serves the page |
+| `packages/server/` | a Bun process | reads the run in `TRIAGE_SLACK_CURRENT`, holds it, serves the page |
 | `packages/web/` | a Svelte app | renders the batch, takes my decision on each item |
 | `orchestrator/` | a Claude session | runs the loop, executes proposals, closes the sitting |
 
