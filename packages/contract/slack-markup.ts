@@ -73,6 +73,20 @@ function tokenOf(g: Record<string, string | undefined>): Token {
   return { kind: "emoji", name: g.emoji! };
 }
 
+/** Where a text holds code: a block between triple backticks, over as many
+ *  lines as it takes, and a span between single backticks on one line. Slack
+ *  shows code as written, so a shortcode inside it is not an emoji.
+ *  `"run `:x:`"` -> `[[4, 9]]` */
+function codeIn(text: string): [number, number][] {
+  const spans: [number, number][] = [];
+  for (const m of text.matchAll(/```[\s\S]*?```/g)) spans.push([m.index!, m.index! + m[0].length]);
+  const inBlock = (at: number) => spans.some(([from, to]) => at >= from && at < to);
+  for (const m of text.matchAll(/`[^`\n]+`/g)) {
+    if (!inBlock(m.index!)) spans.push([m.index!, m.index! + m[0].length]);
+  }
+  return spans;
+}
+
 /** Splits a message's text into the spans (tokens) a reader sees. Whatever
  *  the regex matches becomes a typed token, and whatever lies between two
  *  matches is plain text.
@@ -82,11 +96,13 @@ export function tokenize(text: string): Token[] {
   let last = 0;
   let m: RegExpExecArray | null;
   MARKUP.lastIndex = 0;
+  const code = codeIn(text);
   while ((m = MARKUP.exec(text)) !== null) {
     // Right after a digit an "emoji" stays text, which is how Slack draws it:
     // a clock time, `12:26:59`, and `5:100:` — while `done:tada:` and
     // `:tada:5` are emoji. Tried in Slack on 2026-09-28.
     if (m.groups!.emoji && /\p{N}/u.test(text[m.index - 1] ?? "")) continue;
+    if (m.groups!.emoji && code.some(([from, to]) => m!.index >= from && m!.index < to)) continue;
     if (m.index > last) {
       out.push({ kind: "text", text: unescape(text.slice(last, m.index)) });
     }
