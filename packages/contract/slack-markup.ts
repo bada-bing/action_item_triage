@@ -83,6 +83,12 @@ export function tokenize(text: string): Token[] {
   let m: RegExpExecArray | null;
   MARKUP.lastIndex = 0;
   while ((m = MARKUP.exec(text)) !== null) {
+    // An emoji stands apart from the words around it — `5 💯`, never `5:100:`
+    // — so one written up against a letter or a digit stays text: it is a
+    // clock time, `12:26:59`, or an identifier, `user:admin:42`.
+    const word = /[\p{L}\p{N}]/u;
+    const attached = word.test(text[m.index - 1] ?? "") || word.test(text[m.index + m[0].length] ?? "");
+    if (m.groups!.emoji && attached) continue;
     if (m.index > last) {
       out.push({ kind: "text", text: unescape(text.slice(last, m.index)) });
     }
