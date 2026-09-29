@@ -33,12 +33,26 @@ export type Reaction = z.infer<typeof Reaction>;
  *  event and attributes it to whoever did it, as Slack's own row does. A
  *  channel post and an app's dm both lead with the newest message in the
  *  conversation, since Slack keys them by conversation and not by message. */
+/** A file a message carries — an image, a PDF, a snippet — as Slack names it.
+ *  Only these travel, not the file itself: a card says what is there. */
+export const File = z.object({
+  id: z.string(),
+  name: z.string(),
+  /** The file's media type, as Slack gives it: `image/png`, `text/plain`. */
+  type: z.string(),
+  /** As Slack writes it, `127.2 KB`, since nothing computes with it. */
+  size: z.string(),
+});
+export type File = z.infer<typeof File>;
+
 export const Message = z.object({
   ts: z.string(),
   text: z.string(),
   author: User,
   /** Empty when there are none — never absent, so nothing needs a guard. */
   reactions: z.array(Reaction).default([]),
+  /** Empty when there are none, like reactions. */
+  files: z.array(File).default([]),
 });
 export type Message = z.infer<typeof Message>;
 

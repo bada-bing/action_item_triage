@@ -3,6 +3,7 @@
   import type { Action } from "@ait/contract/source-item";
   import type { SlackItem, User } from "@ait/contract/slack";
   import MessageText from "./MessageText.svelte";
+  import Files from "./Files.svelte";
   import ReasonBadge from "./ReasonBadge.svelte";
   import Proposals from "./Proposals.svelte";
   import Reactions from "./Reactions.svelte";
@@ -123,6 +124,9 @@
     <blockquote>
       {#if attributed}<span class="attrib">{nameOf(message.author)}:</span>{/if}
       <MessageText text={message.text} {me} {myGroups} {emoji} />
+      {#if message.files.length}
+        <Files files={message.files} />
+      {/if}
       {#if message.reactions.length}
         <Reactions reactions={message.reactions} {me} {emoji} />
       {/if}

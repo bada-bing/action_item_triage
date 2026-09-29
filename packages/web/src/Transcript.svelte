@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Message, User } from "@ait/contract/slack";
   import MessageText from "./MessageText.svelte";
+  import Files from "./Files.svelte";
   import Reactions from "./Reactions.svelte";
   import { faceOf } from "./slack-user.ts";
   import { formatDate, formatTime } from "./slack-time.ts";
@@ -101,6 +102,9 @@
     <span class="who">{message.author.id === me.id ? "You" : message.author.display}</span>
     <span class="time">{formatTime(message.ts)}</span>
     <MessageText text={message.text} {me} {myGroups} {emoji} />
+    {#if message.files.length}
+      <Files files={message.files} />
+    {/if}
     {#if message.reactions.length}
       <Reactions reactions={message.reactions} {me} {emoji} />
     {/if}
