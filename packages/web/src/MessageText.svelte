@@ -26,7 +26,7 @@
   }
 </script>
 
-{#each tokenize(text) as token}
+<span class="text">{#each tokenize(text) as token}
   {#if token.kind === "text"}{token.text}
   {:else if token.kind === "mention"}<span
       class="mention {tone(token)}">{token.label}</span>
@@ -35,9 +35,15 @@
   {:else if emoji[token.name]}<img class="emoji" src={emoji[token.name]}
       alt=":{token.name}:" />
   {:else}:{token.name}:{/if}
-{/each}
+{/each}</span>
 
 <style>
+  /* A message keeps its own line breaks. Only its text does: whatever a card
+     draws around it — files, reactions — lays out as usual, so the space
+     between those blocks never shows as an empty line. */
+  .text {
+    white-space: pre-wrap;
+  }
   /* Still a chip, so it reads as a handle rather than as words — just without
      a hue, because it does not reach me. */
   .mention.generic {

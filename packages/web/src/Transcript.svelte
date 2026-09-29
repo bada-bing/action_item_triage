@@ -101,7 +101,9 @@
     {/if}
     <span class="who">{message.author.id === me.id ? "You" : message.author.display}</span>
     <span class="time">{formatTime(message.ts)}</span>
-    <MessageText text={message.text} {me} {myGroups} {emoji} />
+    {#if message.text.trim()}
+      <MessageText text={message.text} {me} {myGroups} {emoji} />
+    {/if}
     {#if message.files.length}
       <Files files={message.files} />
     {/if}
@@ -156,7 +158,6 @@
     border-radius: 4px;
     font-size: 12.5px;
     color: var(--muted);
-    white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
   /* Inline, so a wrapped line runs back to the margin rather than indenting

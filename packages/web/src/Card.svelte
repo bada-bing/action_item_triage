@@ -123,7 +123,9 @@
 
     <blockquote>
       {#if attributed}<span class="attrib">{nameOf(message.author)}:</span>{/if}
-      <MessageText text={message.text} {me} {myGroups} {emoji} />
+      {#if message.text.trim()}
+        <MessageText text={message.text} {me} {myGroups} {emoji} />
+      {/if}
       {#if message.files.length}
         <Files files={message.files} />
       {/if}
@@ -384,7 +386,6 @@
     background: var(--subject);
     font-size: 16px;
     line-height: 1.45;
-    white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
 </style>
